@@ -11,8 +11,17 @@ class App extends React.Component {
   videoRef = React.createRef();
   canvasRef = React.createRef();
 
+  constructor(props){
+    super(props);
+    this.state = {
+      model: null,
+      run: false,
+    }
+    this.stopModel = this.stopModel.bind(this);
+    this.startModel = this.startModel.bind(this);
+  }
+
   componentDidMount() {
-    this.setState({model: null});
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       const webCamPromise = navigator.mediaDevices
         .getUserMedia({
@@ -30,13 +39,16 @@ class App extends React.Component {
             };
           });
         });
-        
+      
       const modelPromise = tf.loadGraphModel('https://cors-anywhere.herokuapp.com/https://tensorflowfyp.s3-ap-southeast-2.amazonaws.com/model.json',
       {
         credentials: 'include',
         mode: 'no-cors', // no-cors, *cors, same-origin
       }).then((model)=>{
-        this.setState({model: model})
+        this.setState({
+          model: model,
+          run: true,
+        })
       });
       Promise.all([modelPromise, webCamPromise])
         .then(values => {
@@ -45,23 +57,33 @@ class App extends React.Component {
         .catch(error => {
           console.error(error);
         });
-    }
+   }
+  }
+
+  stopModel(){
+    this.setState({run: false});
+  }
+
+  startModel(){
+    this.setState({run: true});
   }
 
   async detectObjects () {
     if (this.state.model === null) return;
-    const tfImg = tf.browser.fromPixels(this.videoRef.current);
-    const smallImg = tf.image.resizeBilinear(tfImg, [300, 300]); // 600, 450
-    const resized = tf.cast(smallImg, 'float32');
-    const tf4d = tf.tensor4d(Array.from(resized.dataSync()), [1, 300, 300, 3]); // 600, 450
-    let predictions = await this.state.model.executeAsync({ image_tensor: tf4d }, ['detection_boxes', 'num_detections', 'detection_classes', 'detection_scores']);
-    
-    this.renderPredictions(predictions[0].dataSync(), predictions[1].dataSync(), predictions[2].dataSync(), predictions[3].dataSync())
-    
-    tfImg.dispose();
-    smallImg.dispose();
-    resized.dispose();
-    tf4d.dispose();
+    if (this.state.run) {
+      const tfImg = tf.browser.fromPixels(this.videoRef.current);
+      const smallImg = tf.image.resizeBilinear(tfImg, [300, 300]); // 600, 450
+      const resized = tf.cast(smallImg, 'float32');
+      const tf4d = tf.tensor4d(Array.from(resized.dataSync()), [1, 300, 300, 3]); // 600, 450
+      let predictions = await this.state.model.executeAsync({ image_tensor: tf4d }, ['detection_boxes', 'num_detections', 'detection_classes', 'detection_scores']);
+      
+      this.renderPredictions(predictions[0].dataSync(), predictions[1].dataSync(), predictions[2].dataSync(), predictions[3].dataSync())
+      
+      tfImg.dispose();
+      smallImg.dispose();
+      resized.dispose();
+      tf4d.dispose();
+    }
 
     requestAnimationFrame(() => {
       this.detectObjects()
@@ -83,6 +105,7 @@ class App extends React.Component {
      // clear the canvas
      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
      // draw results
+     if(this.state.run === false) return;
      for (let i = 0; i < totalPredictions[0]; i++) {
        const minY = predictionBoxes[i * 4] * 500
        const minX = predictionBoxes[i * 4 + 1] * 600
@@ -90,7 +113,7 @@ class App extends React.Component {
        const maxX = predictionBoxes[i * 4 + 3] * 600
        const score = predictionScores[i * 3] * 100
        const item = classes[predictionClasses[i] - 1];
-       const predictionString = score.toFixed(1)+"-"+item;
+       const predictionString = score.toFixed(1)+"- "+item;
         if (score > 90) {
          ctx.beginPath()
          ctx.rect(minX, minY, maxX - minX, maxY - minY)
@@ -115,7 +138,7 @@ class App extends React.Component {
   render() {
     return (
       <div>
-        <video
+       <video
           className="size"
           autoPlay
           playsInline
@@ -130,6 +153,8 @@ class App extends React.Component {
           width="600"
           height="500"
         />
+        <button className="stop" onClick={this.stopModel}>Stop</button>
+        <button className="start" onClick={this.startModel}>Start</button>
       </div>
     );
   }

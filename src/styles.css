@@ -1,6 +1,18 @@
 .size {
-    position: fixed;
-    top: 0;
-    left: 0;
-  }
+  position: absolute;
+  top: 0px;
+  left: 0px;
+}
+
+.start{
+  position: absolute;
+  top: 500px;
+  left: 400px;
+}
+
+.stop{
+  position: fixed;
+  top: 500px;
+  left: 700px;
+}
   
