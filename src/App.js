@@ -1,5 +1,6 @@
 // DEMO: https://codesandbox.io/s/z364noozrm
 import React from "react";
+import Button from '@material-ui/core/Button'
 
 import "./styles.css";
 
@@ -16,9 +17,13 @@ class App extends React.Component {
     this.state = {
       model: null,
       run: false,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      camX: null,
     }
     this.stopModel = this.stopModel.bind(this);
     this.startModel = this.startModel.bind(this);
+    this.handleResize = this.handleResize.bind(this);
   }
 
   componentDidMount() {
@@ -32,6 +37,9 @@ class App extends React.Component {
         })
         .then(stream => {
           window.stream = stream;
+          this.setState({
+            camX: (this.state.width - stream.getTracks()[0].getSettings().width)/2,
+          });
           this.videoRef.current.srcObject = stream;
           return new Promise((resolve, reject) => {
             this.videoRef.current.onloadedmetadata = () => {
@@ -57,7 +65,27 @@ class App extends React.Component {
         .catch(error => {
           console.error(error);
         });
+      
+      this.setButtonPos();
+      window.addEventListener('resize', this.handleResize);
    }
+  }
+
+  setButtonPos(){
+    document.getElementById("stop-button").style.top = (this.state.height / 10 * 8.5).toString()+"px";
+    document.getElementById("start-button").style.top =(this.state.height / 10 * 8.5).toString()+"px";
+    
+    document.getElementById("stop-button").style.left = (window.innerWidth / 20 * 8).toString()+ "px";
+    document.getElementById("start-button").style.left = (window.innerWidth / 20 * 10).toString()+ "px";
+  }
+
+  handleResize(){
+    this.setState({
+      width: window.innerWidth,
+      height: window.innerHeight,
+    });
+    
+    this.setButtonPos();
   }
 
   stopModel(){
@@ -74,7 +102,7 @@ class App extends React.Component {
       const tfImg = tf.browser.fromPixels(this.videoRef.current);
       const smallImg = tf.image.resizeBilinear(tfImg, [300, 300]); // 600, 450
       const resized = tf.cast(smallImg, 'float32');
-      const tf4d = tf.tensor4d(Array.from(resized.dataSync()), [1, 300, 300, 3]); // 600, 450
+      const tf4d = tf.tensor4d(Array.from(resized.dataSync()), [1, 300, 300, 3], 'int32'); // 600, 450
       let predictions = await this.state.model.executeAsync({ image_tensor: tf4d }, ['detection_boxes', 'num_detections', 'detection_classes', 'detection_scores']);
       
       this.renderPredictions(predictions[0].dataSync(), predictions[1].dataSync(), predictions[2].dataSync(), predictions[3].dataSync())
@@ -107,11 +135,11 @@ class App extends React.Component {
      // draw results
      if(this.state.run === false) return;
      for (let i = 0; i < totalPredictions[0]; i++) {
-       const minY = predictionBoxes[i * 4] * 500
-       const minX = predictionBoxes[i * 4 + 1] * 600
-       const maxY = predictionBoxes[i * 4 + 2] * 500
-       const maxX = predictionBoxes[i * 4 + 3] * 600
-       const score = predictionScores[i * 3] * 100
+       const minY = predictionBoxes[i * 4] * 500;
+       const minX = predictionBoxes[i * 4 + 1] * 600 + this.state.camX;
+       const maxY = predictionBoxes[i * 4 + 2] * 500;
+       const maxX = predictionBoxes[i * 4 + 3] * 600 + this.state.camX;
+       const score = predictionScores[i * 3] * 100;
        const item = classes[predictionClasses[i] - 1];
        const predictionString = score.toFixed(1)+"- "+item;
         if (score > 90) {
@@ -144,17 +172,25 @@ class App extends React.Component {
           playsInline
           muted
           ref={this.videoRef}
-          width="600"
-          height="500"
+          width={this.state.width}
+          height={this.state.height}
         />
         <canvas
           className="size"
           ref={this.canvasRef}
-          width="600"
-          height="500"
+          width={this.state.width}
+          height={this.state.height}
         />
-        <button className="stop" onClick={this.stopModel}>Stop</button>
-        <button className="start" onClick={this.startModel}>Start</button>
+        {this.state.run?
+          <div>
+            <Button variant="contained" color="primary" disableElevation className="main-button" id="stop-button" onClick={this.stopModel}>Stop</Button> 
+            <Button variant="contained" disableElevation className="main-button" id="start-button" onClick={this.startModel} >Start</Button>
+          </div>: 
+          <div>
+            <Button variant="contained" disableElevation className="main-button" id="stop-button" onClick={this.stopModel}>Stop</Button> 
+            <Button variant="contained" color="primary" disableElevation className="main-button" id="start-button" onClick={this.startModel}>Start</Button>
+          </div>}
+        
       </div>
     );
   }

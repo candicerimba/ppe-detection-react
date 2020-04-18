@@ -5,13 +5,15 @@
   "keywords": [],
   "main": "src/index.js",
   "dependencies": {
-    "@tensorflow/tfjs": "",
-    "@tensorflow/tfjs-node": "",
+    "@material-ui/core": "^4.9.10",
+    "@tensorflow/tfjs": "1.7.2",
+    "@tensorflow/tfjs-core": "1.7.2",
     "aws-sdk": "^2.646.0",
-    "react": "16.5.2",
-    "react-dom": "16.5.2",
+    "react": "16.8.0",
+    "react-dom": "16.8.0",
     "react-magic-dropzone": "1.0.1",
-    "react-scripts": "2.0.3"
+    "react-scripts": "2.0.3",
+    "reactstrap": "^8.4.1"
   },
   "devDependencies": {},
   "scripts": {

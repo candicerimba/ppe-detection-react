@@ -4,15 +4,6 @@
   left: 0px;
 }
 
-.start{
-  position: absolute;
-  top: 500px;
-  left: 400px;
+.main-button{
+  position: relative;
 }
-
-.stop{
-  position: fixed;
-  top: 500px;
-  left: 700px;
-}
-  
