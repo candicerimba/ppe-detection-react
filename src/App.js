@@ -20,10 +20,14 @@ class App extends React.Component {
       width: window.innerWidth,
       height: window.innerHeight,
       camX: null,
+      console: '.',
     }
     this.stopModel = this.stopModel.bind(this);
     this.startModel = this.startModel.bind(this);
     this.handleResize = this.handleResize.bind(this);
+    this.stopMessage = this.stopMessage.bind(this);
+    this.startMessage = this.startMessage.bind(this);
+    this.resetMessage = this.resetMessage.bind(this);
   }
 
   componentDidMount() {
@@ -64,6 +68,7 @@ class App extends React.Component {
         })
         .catch(error => {
           console.error(error);
+          this.setState({console: error});
         });
       
       this.setButtonPos();
@@ -75,8 +80,10 @@ class App extends React.Component {
     document.getElementById("stop-button").style.top = (this.state.height / 10 * 8.5).toString()+"px";
     document.getElementById("start-button").style.top =(this.state.height / 10 * 8.5).toString()+"px";
     
-    document.getElementById("stop-button").style.left = (window.innerWidth / 20 * 8).toString()+ "px";
-    document.getElementById("start-button").style.left = (window.innerWidth / 20 * 10).toString()+ "px";
+    document.getElementById("stop-button").style.left = (this.state.width / 20 * 8).toString()+ "px";
+    document.getElementById("start-button").style.left = (this.state.width / 20 * 10).toString()+ "px";
+    
+    document.getElementById("console-box").style.top = this.state.height - 68 + "px";
   }
 
   handleResize(){
@@ -86,6 +93,43 @@ class App extends React.Component {
     });
     
     this.setButtonPos();
+
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices
+        .getUserMedia({
+          audio: false,
+          video: {
+            facingMode: "user"
+          }
+        })
+        .then(stream => {
+          window.stream = stream;
+          this.setState({
+            camX: (this.state.width - stream.getTracks()[0].getSettings().width)/2,
+            camY: (this.state.height - stream.getTracks()[0].getSettings().height)/2,
+          });
+        }
+    )}
+  }
+  
+  startMessage(){
+    if (this.state.run){
+      this.setState({console: 'Detection is already running.'})
+    } else {
+      this.setState({console: 'Click on this button to start detection.'});
+    }
+  }
+
+  stopMessage(){
+    if (this.state.run){
+      this.setState({console: 'Click on this button to stop detection.'})
+    } else {
+      this.setState({console: 'Detection is not running.'});
+    }
+  }
+
+  resetMessage(){
+    this.setState({console: '.'});
   }
 
   stopModel(){
@@ -165,32 +209,32 @@ class App extends React.Component {
 
   render() {
     return (
-      <div>
-       <video
-          className="size"
-          autoPlay
-          playsInline
-          muted
-          ref={this.videoRef}
-          width={this.state.width}
-          height={this.state.height}
-        />
-        <canvas
-          className="size"
-          ref={this.canvasRef}
-          width={this.state.width}
-          height={this.state.height}
-        />
-        {this.state.run?
-          <div>
-            <Button variant="contained" color="primary" disableElevation className="main-button" id="stop-button" onClick={this.stopModel}>Stop</Button> 
-            <Button variant="contained" disableElevation className="main-button" id="start-button" onClick={this.startModel} >Start</Button>
-          </div>: 
-          <div>
-            <Button variant="contained" disableElevation className="main-button" id="stop-button" onClick={this.stopModel}>Stop</Button> 
-            <Button variant="contained" color="primary" disableElevation className="main-button" id="start-button" onClick={this.startModel}>Start</Button>
-          </div>}
-        
+      <div> 
+        <video
+            className="size"
+            autoPlay
+            playsInline
+            muted
+            ref={this.videoRef}
+            width={this.state.width}
+            height={this.state.height}
+          />
+          <canvas
+            className="size"
+            ref={this.canvasRef}
+            width={this.state.width}
+            height={this.state.height}
+          />
+          {this.state.run?
+            <div>
+              <Button variant="contained" color="primary" disableElevation className="main-button" id="stop-button" onClick={this.stopModel} onMouseEnter = {this.stopMessage} onMouseLeave = {this.resetMessage}>Stop</Button> 
+              <Button variant="contained" disableElevation className="main-button" id="start-button" onClick={this.startModel} onMouseEnter = {this.startMessage} onMouseLeave = {this.resetMessage}>Start</Button>
+            </div>: 
+            <div>
+              <Button variant="contained" disableElevation className="main-button" id="stop-button" onClick={this.stopModel} onMouseEnter = {this.stopMessage} onMouseLeave = {this.resetMessage}>Stop</Button> 
+              <Button variant="contained" color="primary" disableElevation className="main-button" id="start-button" onClick={this.startModel} onMouseEnter = {this.startMessage} onMouseLeave = {this.resetMessage}>Start</Button>
+            </div>}
+          <div id="console-box">{this.state.console}</div>
       </div>
     );
   }

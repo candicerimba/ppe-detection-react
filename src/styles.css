@@ -6,4 +6,12 @@
 
 .main-button{
   position: relative;
+  z-index: 100;
+}
+
+#console-box {
+  position: relative;
+  padding: 5px;
+  background-color: black;
+  color: white;
 }
