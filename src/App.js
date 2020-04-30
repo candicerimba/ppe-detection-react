@@ -1,12 +1,17 @@
 // DEMO: https://codesandbox.io/s/z364noozrm
 import React from "react";
-import Button from '@material-ui/core/Button'
+import Loader from 'react-loader';
+import ReactTooltip from 'react-tooltip';
+import PauseOutlinedIcon from '@material-ui/icons/PauseOutlined';
+import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 
 import "./styles.css";
 
 const tf = require("@tensorflow/tfjs");
 
-const classes = ["gun"];
+const classes = ["hardhat", "person", "vest"];
+
+const MAX_HEIGHT = 0.90 * window.innerHeight;
 
 class App extends React.Component {
   videoRef = React.createRef();
@@ -17,14 +22,13 @@ class App extends React.Component {
     this.state = {
       model: null,
       run: false,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      camX: null,
-      console: '.',
+      width: 640,
+      height: 480,
+      consoleErr: '.',
+      webcamStart: false,
     }
     this.stopModel = this.stopModel.bind(this);
     this.startModel = this.startModel.bind(this);
-    this.handleResize = this.handleResize.bind(this);
     this.stopMessage = this.stopMessage.bind(this);
     this.startMessage = this.startMessage.bind(this);
     this.resetMessage = this.resetMessage.bind(this);
@@ -41,8 +45,10 @@ class App extends React.Component {
         })
         .then(stream => {
           window.stream = stream;
+          const ratio = MAX_HEIGHT / stream.getTracks()[0].getSettings().height;
           this.setState({
-            camX: (this.state.width - stream.getTracks()[0].getSettings().width)/2,
+            width: stream.getTracks()[0].getSettings().width * ratio,
+            height: stream.getTracks()[0].getSettings().height * ratio,
           });
           this.videoRef.current.srcObject = stream;
           return new Promise((resolve, reject) => {
@@ -68,76 +74,48 @@ class App extends React.Component {
         })
         .catch(error => {
           console.error(error);
-          this.setState({console: error});
+          this.setState({consoleErr: error});
         });
       
       this.setButtonPos();
-      window.addEventListener('resize', this.handleResize);
    }
   }
 
   setButtonPos(){
-    document.getElementById("stop-button").style.top = (this.state.height / 10 * 8.5).toString()+"px";
-    document.getElementById("start-button").style.top =(this.state.height / 10 * 8.5).toString()+"px";
-    
-    document.getElementById("stop-button").style.left = (this.state.width / 20 * 8).toString()+ "px";
-    document.getElementById("start-button").style.left = (this.state.width / 20 * 10).toString()+ "px";
-    
-    document.getElementById("console-box").style.top = this.state.height - 68 + "px";
-  }
-
-  handleResize(){
-    this.setState({
-      width: window.innerWidth,
-      height: window.innerHeight,
-    });
-    
-    this.setButtonPos();
-
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices
-        .getUserMedia({
-          audio: false,
-          video: {
-            facingMode: "user"
-          }
-        })
-        .then(stream => {
-          window.stream = stream;
-          this.setState({
-            camX: (this.state.width - stream.getTracks()[0].getSettings().width)/2,
-            camY: (this.state.height - stream.getTracks()[0].getSettings().height)/2,
-          });
-        }
-    )}
+    //document.getElementById("#main-button-bar").style.top = (window.height - this.state.height) / 2;
   }
   
   startMessage(){
     if (this.state.run){
-      this.setState({console: 'Detection is already running.'})
+      this.setState({consoleErr: 'Detection is already running.'})
     } else {
-      this.setState({console: 'Click on this button to start detection.'});
+      this.setState({consoleErr: 'Click on this button to start detection.'});
     }
   }
 
   stopMessage(){
     if (this.state.run){
-      this.setState({console: 'Click on this button to stop detection.'})
+      this.setState({consoleErr: 'Click on this button to stop detection.'})
     } else {
-      this.setState({console: 'Detection is not running.'});
+      this.setState({consoleErr: 'Detection is not running.'});
     }
   }
 
   resetMessage(){
-    this.setState({console: '.'});
+    this.setState({consoleErr: '.'});
+    
   }
 
   stopModel(){
     this.setState({run: false});
+    document.getElementById("stop-btn").style.display = 'none';
+    document.getElementById("start-btn").style.display = 'inline-block';
   }
 
   startModel(){
     this.setState({run: true});
+    document.getElementById("stop-btn").style.display = 'inline-block';
+    document.getElementById("start-btn").style.display = 'none';
   }
 
   async detectObjects () {
@@ -150,7 +128,6 @@ class App extends React.Component {
       let predictions = await this.state.model.executeAsync({ image_tensor: tf4d }, ['detection_boxes', 'num_detections', 'detection_classes', 'detection_scores']);
       
       this.renderPredictions(predictions[0].dataSync(), predictions[1].dataSync(), predictions[2].dataSync(), predictions[3].dataSync())
-      
       tfImg.dispose();
       smallImg.dispose();
       resized.dispose();
@@ -177,16 +154,18 @@ class App extends React.Component {
      // clear the canvas
      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
      // draw results
+    this.setState({webcamStart: true});
+
      if(this.state.run === false) return;
      for (let i = 0; i < totalPredictions[0]; i++) {
        const minY = predictionBoxes[i * 4] * 500;
-       const minX = predictionBoxes[i * 4 + 1] * 600 + this.state.camX;
+       const minX = predictionBoxes[i * 4 + 1] * 600
        const maxY = predictionBoxes[i * 4 + 2] * 500;
-       const maxX = predictionBoxes[i * 4 + 3] * 600 + this.state.camX;
+       const maxX = predictionBoxes[i * 4 + 3] * 600
        const score = predictionScores[i * 3] * 100;
        const item = classes[predictionClasses[i] - 1];
        const predictionString = score.toFixed(1)+"- "+item;
-        if (score > 90) {
+       if (score > 40) {
          ctx.beginPath()
          ctx.rect(minX, minY, maxX - minX, maxY - minY)
          ctx.lineWidth = 4
@@ -210,31 +189,38 @@ class App extends React.Component {
   render() {
     return (
       <div> 
-        <video
-            className="size"
-            autoPlay
-            playsInline
-            muted
-            ref={this.videoRef}
-            width={this.state.width}
-            height={this.state.height}
-          />
-          <canvas
-            className="size"
-            ref={this.canvasRef}
-            width={this.state.width}
-            height={this.state.height}
-          />
-          {this.state.run?
-            <div>
-              <Button variant="contained" color="primary" disableElevation className="main-button" id="stop-button" onClick={this.stopModel} onMouseEnter = {this.stopMessage} onMouseLeave = {this.resetMessage}>Stop</Button> 
-              <Button variant="contained" disableElevation className="main-button" id="start-button" onClick={this.startModel} onMouseEnter = {this.startMessage} onMouseLeave = {this.resetMessage}>Start</Button>
-            </div>: 
-            <div>
-              <Button variant="contained" disableElevation className="main-button" id="stop-button" onClick={this.stopModel} onMouseEnter = {this.stopMessage} onMouseLeave = {this.resetMessage}>Stop</Button> 
-              <Button variant="contained" color="primary" disableElevation className="main-button" id="start-button" onClick={this.startModel} onMouseEnter = {this.startMessage} onMouseLeave = {this.resetMessage}>Start</Button>
-            </div>}
-          <div id="console-box">{this.state.console}</div>
+          <div className="video">
+          <video
+              autoPlay
+              playsInline
+              muted
+              className="vid-and-canvas"
+              ref={this.videoRef}
+              width={this.state.width}
+              height={this.state.height}
+            />
+            <canvas
+              className="vid-and-canvas"
+              ref={this.canvasRef}
+              width={this.state.width}
+              height={this.state.height}
+            />
+          </div>
+        <Loader loaded={this.state.webcamStart && this.state.model} options={{color: 'white'}}>
+          <div id="main-button-bar">
+              
+              <PauseOutlinedIcon id="stop-btn" className="main-btn" onClick={this.stopModel} data-tip data-for="stop" />
+              <PlayArrowIcon style={{display: 'none'}} id="start-btn" className="main-btn" onClick={this.startModel} data-tip data-for="start" />
+              
+              <ReactTooltip id="start" place="top" type="light" effect="float">
+                <span>Click on this button to start detection.</span>  
+              </ReactTooltip>
+              <ReactTooltip id="stop" place="top" type="light" effect="float">
+                <span>Click on this button to stop detection.</span>  
+              </ReactTooltip>
+            {/* <div id="console-box">{this.state.consoleErr}</div> */}
+            </div>
+        </Loader>
       </div>
     );
   }
