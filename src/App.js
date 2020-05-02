@@ -9,7 +9,9 @@ import "./styles.css";
 
 const tf = require("@tensorflow/tfjs");
 
-const classes = ["hardhat", "person", "vest"];
+const classes = [{item: "hardhat", color: "#F8962B"}, {item:"person", color:"#FE0000"}, {item: "vest", color: "#51C1B1"}];
+
+const VALID_PERSON_COLOUR = "#22EE5B";
 
 const MAX_HEIGHT = 0.90 * window.innerHeight;
 
@@ -158,33 +160,42 @@ class App extends React.Component {
 
      if(this.state.run === false) return;
      for (let i = 0; i < totalPredictions[0]; i++) {
-       const minY = predictionBoxes[i * 4] * 500;
-       const minX = predictionBoxes[i * 4 + 1] * 600
-       const maxY = predictionBoxes[i * 4 + 2] * 500;
-       const maxX = predictionBoxes[i * 4 + 3] * 600
+       const minY = predictionBoxes[i * 4] * this.state.height;
+       const minX = predictionBoxes[i * 4 + 1] * this.state.width;
+       const maxY = predictionBoxes[i * 4 + 2] * this.state.height;
+       const maxX = predictionBoxes[i * 4 + 3] * this.state.width;
        const score = predictionScores[i * 3] * 100;
        const item = classes[predictionClasses[i] - 1];
-       const predictionString = score.toFixed(1)+"- "+item;
+       const predictionString = score.toFixed(1)+" - "+item.item;
+
        if (score > 40) {
-         ctx.beginPath()
-         ctx.rect(minX, minY, maxX - minX, maxY - minY)
-         ctx.lineWidth = 4
-         ctx.strokeStyle = '#00FFFF'
-         ctx.stroke();
-
-         ctx.textBaseline = "top";
-         ctx.font = '16px sans-serif'
-         ctx.fillStyle = '#00FFFF'
-         const textWidth = ctx.measureText(predictionString).width;
-         const textHeight = parseInt(ctx.font, 10); // base 10
-         ctx.fillRect(minX, minY, textWidth + 4, textHeight + 4);
-
-         ctx.shadowColor = 'white'
-         ctx.fillStyle = '#000000'
-         ctx.fillText(predictionString, minX, minY);
+         const color = item.color;
+         detected[i].push([minX, minY, maxX, maxY]);
+         this.drawBox(minX, minY, maxX, maxY, color, predictionString);
        }
     }
   };
+
+  drawBox(minX, minY, maxX, maxY, color, text){
+    
+    const ctx = this.canvasRef.current.getContext('2d')
+    ctx.beginPath()
+    ctx.rect(minX, minY, maxX - minX, maxY - minY)
+    ctx.lineWidth = 4
+    ctx.strokeStyle = color;
+    ctx.stroke();
+
+    ctx.textBaseline = "top";
+    ctx.font = '16px sans-serif'
+    ctx.fillStyle = color;
+    const textWidth = ctx.measureText(text).width;
+    const textHeight = parseInt(ctx.font, 10); // base 10
+    ctx.fillRect(minX, minY, textWidth + 4, textHeight + 4);
+
+    ctx.shadowColor = 'white'
+    ctx.fillStyle = 'white';
+    ctx.fillText(text, minX, minY);
+  }
 
   render() {
     return (
@@ -206,7 +217,7 @@ class App extends React.Component {
               height={this.state.height}
             />
           </div>
-        <Loader loaded={this.state.webcamStart && this.state.model} options={{color: 'white'}}>
+        <Loader loaded={this.state.webcamStart && this.state.model} options={{color: this.state.model ? 'white' : 'black'}}>
           <div id="main-button-bar">
               
               <PauseOutlinedIcon id="stop-btn" className="main-btn" onClick={this.stopModel} data-tip data-for="stop" />
@@ -218,7 +229,6 @@ class App extends React.Component {
               <ReactTooltip id="stop" place="top" type="light" effect="float">
                 <span>Click on this button to stop detection.</span>  
               </ReactTooltip>
-            {/* <div id="console-box">{this.state.consoleErr}</div> */}
             </div>
         </Loader>
       </div>
