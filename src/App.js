@@ -183,6 +183,13 @@ class App extends React.Component {
         this.drawBox(minX, minY, maxX, maxY, color, predictionString);
       }
     }
+    let helmetExistence = null;
+    if (helmet.includes(false)) helmetExistence = false;
+    else if (helmet.includes(true)) helmetExistence = true;
+
+    let vestExistence = null;
+    if (vest.includes(false)) vestExistence = false;
+    else if (vest.includes(true)) vestExistence = true;
     
     if (helmetExistence === true && vestExistence === true) this.toast(toastType.SUCCESS, "ACCESS GRANTED!", "Welcome in!");
   };
