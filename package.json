@@ -12,6 +12,7 @@
     "aws-sdk": "^2.646.0",
     "react": "16.8.0",
     "react-dom": "16.8.0",
+    "react-loader": "^2.4.7",
     "react-magic-dropzone": "1.0.1",
     "react-rainbow-components": "^1.14.1",
     "react-scripts": "2.0.3",
