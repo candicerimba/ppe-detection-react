@@ -35,6 +35,10 @@ class App extends React.Component {
       width: 640,
       height: 480,
       webcamStart: false,
+      helmetExistence: false,
+      vestExistence: false,
+      hasDetected: false,
+
     }
     this.stopModel = this.stopModel.bind(this);
     this.startModel = this.startModel.bind(this);
@@ -183,15 +187,38 @@ class App extends React.Component {
         this.drawBox(minX, minY, maxX, maxY, color, predictionString);
       }
     }
-    let helmetExistence = null;
-    if (helmet.includes(false)) helmetExistence = false;
-    else if (helmet.includes(true)) helmetExistence = true;
+    // let helmetExistence = null;
+    // If helmet and vest existence are both false, try to detect
+    if (!this.helmetExistence){
+      if (helmet.includes(true)){
+        this.helmetExistence = true;
+        // Upon detecting a helmet, make it remember theres a helmet for 3 seconds
+        setTimeout(() => {this.helmetExistence = false}, 3000);
+      }
+    }
 
-    let vestExistence = null;
-    if (vest.includes(false)) vestExistence = false;
-    else if (vest.includes(true)) vestExistence = true;
-    
-    if (helmetExistence === true && vestExistence === true) this.toast(toastType.SUCCESS, "ACCESS GRANTED!", "Welcome in!");
+    // if (helmet.includes(false)) helmetExistence = false;
+    // else if (helmet.includes(true)) helmetExistence = true;
+
+    // let vestExistence = null;
+    // if (vest.includes(false)) vestExistence = false;
+    // else if (vest.includes(true)) vestExistence = true;
+    // If tehre isnt a vest
+    if (!this.vestExistence){
+      if (vest.includes(true)){
+        this.vestExistence = true;
+        setTimeout(() => {this.vestExistence = false}, 3000);
+      }
+    }
+
+    if (!this.hasDetected){
+      if (this.helmetExistence === true && this.vestExistence === true){
+        this.toast(toastType.SUCCESS, "ACCESS GRANTED!", "Welcome in!");
+      }
+      this.hasDetected = true;
+      setTimeout(() => {this.hasDetected = false}, 5000);
+
+    }
   };
 
   drawBox(minX, minY, maxX, maxY, color, text){
