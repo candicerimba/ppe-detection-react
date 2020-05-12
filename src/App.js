@@ -4,16 +4,24 @@ import Loader from 'react-loader';
 import ReactTooltip from 'react-tooltip';
 import PauseOutlinedIcon from '@material-ui/icons/PauseOutlined';
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
+import { ToastContainer, toast } from 'react-toastify';  
 
+import toastType from './toastType';
+import 'react-toastify/dist/ReactToastify.css';
 import "./styles.css";
 
 const tf = require("@tensorflow/tfjs");
 
-const classes = [{item: "hardhat", color: "#F8962B"}, {item:"person", color:"#FE0000"}, {item: "vest", color: "#51C1B1"}];
-
-const VALID_PERSON_COLOUR = "#22EE5B";
+const classes = [
+  {item: "helmet", color: "#F8962B", helmet: true}, 
+  {item:"no helmet", color:"#FE0000", helmet: false}, 
+  {item: "vest", color: "#22EE5B", vest: true},
+  {item: "no vest", color: "#51C1B1", vest: false}];
 
 const MAX_HEIGHT = 0.90 * window.innerHeight;
+var toastOpen = false;
+
+toast.configure();
 
 class App extends React.Component {
   videoRef = React.createRef();
@@ -26,14 +34,10 @@ class App extends React.Component {
       run: false,
       width: 640,
       height: 480,
-      consoleErr: '.',
       webcamStart: false,
     }
     this.stopModel = this.stopModel.bind(this);
     this.startModel = this.startModel.bind(this);
-    this.stopMessage = this.stopMessage.bind(this);
-    this.startMessage = this.startMessage.bind(this);
-    this.resetMessage = this.resetMessage.bind(this);
   }
 
   componentDidMount() {
@@ -76,36 +80,8 @@ class App extends React.Component {
         })
         .catch(error => {
           console.error(error);
-          this.setState({consoleErr: error});
         });
-      
-      this.setButtonPos();
    }
-  }
-
-  setButtonPos(){
-    //document.getElementById("#main-button-bar").style.top = (window.height - this.state.height) / 2;
-  }
-  
-  startMessage(){
-    if (this.state.run){
-      this.setState({consoleErr: 'Detection is already running.'})
-    } else {
-      this.setState({consoleErr: 'Click on this button to start detection.'});
-    }
-  }
-
-  stopMessage(){
-    if (this.state.run){
-      this.setState({consoleErr: 'Click on this button to stop detection.'})
-    } else {
-      this.setState({consoleErr: 'Detection is not running.'});
-    }
-  }
-
-  resetMessage(){
-    this.setState({consoleErr: '.'});
-    
   }
 
   stopModel(){
@@ -150,30 +126,94 @@ class App extends React.Component {
     });
   };
 
+  toast(type, title, description){
+    const text = ({closeToast}) => {return (
+      <div style={{paddingLeft: '10%'}}>
+        <b>{title}</b><br/>
+        {description}
+      </div>
+    )}
+
+    const baseOptions = {
+      closeOnClick: false,
+      closeButton: false,
+      pauseOnFocusLoss: false,
+      pauseOnHover: false,
+    }
+
+    const wrongOptions = {
+      ...baseOptions,
+      onOpen: () => {
+        this.audioWrong.play();
+        setTimeout(()=>{
+          this.audioWrong.pause();
+          toastOpen = false;
+        }, 5000);
+      }
+    };
+
+    const rightOptions = {
+      ...baseOptions,
+      onOpen: () => {
+        this.audioRight.play();
+        setTimeout(()=>{
+        this.audioRight.pause();
+          toastOpen = false;
+        }, 5000);
+      }
+    };
+
+    if (!toastOpen){
+      toastOpen = true;
+      if (type === toastType.SUCCESS) toast.success(text, rightOptions);
+      if (type === toastType.WARNING) toast.warning(text, wrongOptions);
+      if (type === toastType.DANGER) toast.danger(text, wrongOptions);
+    }
+  }
+
   renderPredictions (predictionBoxes, totalPredictions, predictionClasses, predictionScores){
      // get the context of canvas
      const ctx = this.canvasRef.current.getContext('2d')
      // clear the canvas
      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
      // draw results
-    this.setState({webcamStart: true});
+    if (!this.state.webcamStart) this.setState({webcamStart: true});
 
-     if(this.state.run === false) return;
-     for (let i = 0; i < totalPredictions[0]; i++) {
-       const minY = predictionBoxes[i * 4] * this.state.height;
-       const minX = predictionBoxes[i * 4 + 1] * this.state.width;
-       const maxY = predictionBoxes[i * 4 + 2] * this.state.height;
-       const maxX = predictionBoxes[i * 4 + 3] * this.state.width;
-       const score = predictionScores[i * 3] * 100;
-       const item = classes[predictionClasses[i] - 1];
-       const predictionString = score.toFixed(1)+" - "+item.item;
+    const vest = [];
+    const helmet = [];
 
-       if (score > 40) {
-         const color = item.color;
-         detected[i].push([minX, minY, maxX, maxY]);
-         this.drawBox(minX, minY, maxX, maxY, color, predictionString);
-       }
+    if(this.state.run === false) return;
+    for (let i = 0; i < totalPredictions[0]; i++) {
+      const minY = predictionBoxes[i * 4] * this.state.height;
+      const minX = predictionBoxes[i * 4 + 1] * this.state.width;
+      const maxY = predictionBoxes[i * 4 + 2] * this.state.height;
+      const maxX = predictionBoxes[i * 4 + 3] * this.state.width;
+      const score = predictionScores[i * 3] * 100;
+      const item = classes[predictionClasses[i] - 1];
+      const predictionString = score.toFixed(1)+" - "+item.item;
+
+      if (score > 20) {        
+        if (item.hasOwnProperty('helmet')) {helmet.push(item.helmet)};
+        if (item.hasOwnProperty('vest')) {vest.push(item.vest)};
+
+        const color = item.color;
+        this.drawBox(minX, minY, maxX, maxY, color, predictionString);
+      }
     }
+    
+    // Need to check for falsy first (no helmet > has helmet)
+    let helmetExistence = null;
+    if (helmet.includes(false)) helmetExistence = false;
+    else if (helmet.includes(true)) helmetExistence = true;
+
+    let vestExistence = null;
+    if (vest.includes(false)) vestExistence = false;
+    else if (vest.includes(true)) vestExistence = true;
+
+    if (helmetExistence === false && vestExistence === false) this.toast(toastType.DANGER, "DANGER!", "There's no vest and helmet on this person!"); 
+    else if (helmetExistence === false) this.toast(toastType.WARNING, "NO HELMET!", "Please wear your helmet!"); 
+    else if (vestExistence === false) this.toast(toastType.WARNING, "NO VEST!", "Please wear your vest!"); 
+    else if (helmetExistence === true && vestExistence === true) this.toast(toastType.SUCCESS, "ACCESS GRANTED!", "Welcome in!");
   };
 
   drawBox(minX, minY, maxX, maxY, color, text){
@@ -200,23 +240,37 @@ class App extends React.Component {
   render() {
     return (
       <div> 
-          <div className="video">
-          <video
-              autoPlay
-              playsInline
-              muted
-              className="vid-and-canvas"
-              ref={this.videoRef}
-              width={this.state.width}
-              height={this.state.height}
-            />
-            <canvas
-              className="vid-and-canvas"
-              ref={this.canvasRef}
-              width={this.state.width}
-              height={this.state.height}
-            />
-          </div>
+        {/* AUDIO */}
+        <audio loop ref={r => this.audioWrong = r}>
+          <source
+            src="https://freesound.org/data/previews/476/476177_6101353-lq.mp3"
+            type="audio/mpeg"
+          />
+        </audio>
+        <audio loop ref={r => this.audioRight = r}>
+          <source
+            src="https://freesound.org/data/previews/131/131660_2398403-lq.mp3"
+            type="audio/mpeg"
+          />
+        </audio>
+        <ToastContainer />
+        <div className="video">
+        <video
+            autoPlay
+            playsInline
+            muted
+            className="vid-and-canvas"
+            ref={this.videoRef}
+            width={this.state.width}
+            height={this.state.height}
+          />
+          <canvas
+            className="vid-and-canvas"
+            ref={this.canvasRef}
+            width={this.state.width}
+            height={this.state.height}
+          />
+        </div>
         <Loader loaded={this.state.webcamStart && this.state.model} options={{color: this.state.model ? 'white' : 'black'}}>
           <div id="main-button-bar">
               

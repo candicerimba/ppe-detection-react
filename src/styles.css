@@ -16,13 +16,14 @@
 
 #main-button-bar {
   position: absolute;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: auto;
-  left: 0;
-  right: 0;
+  margin: auto;
+  left: 50%;
   bottom: 3%;
   text-align: center;
+  position: absolute;
+  display: flex;
+  height: 97%;
+  align-items: flex-end;
 }
 
 .main-btn{
@@ -33,11 +34,4 @@
 
 .main-btn:hover {
   color: lightgray;
-}
-
-#console-box {
-  position: relative;
-  padding: 5px;
-  background-color: black;
-  color: white;
 }
