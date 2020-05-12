@@ -134,26 +134,11 @@ class App extends React.Component {
       </div>
     )}
 
-    const baseOptions = {
+    const rightOptions = {
       closeOnClick: false,
       closeButton: false,
       pauseOnFocusLoss: false,
       pauseOnHover: false,
-    }
-
-    const wrongOptions = {
-      ...baseOptions,
-      onOpen: () => {
-        this.audioWrong.play();
-        setTimeout(()=>{
-          this.audioWrong.pause();
-          toastOpen = false;
-        }, 5000);
-      }
-    };
-
-    const rightOptions = {
-      ...baseOptions,
       onOpen: () => {
         this.audioRight.play();
         setTimeout(()=>{
@@ -166,8 +151,6 @@ class App extends React.Component {
     if (!toastOpen){
       toastOpen = true;
       if (type === toastType.SUCCESS) toast.success(text, rightOptions);
-      if (type === toastType.WARNING) toast.warning(text, wrongOptions);
-      if (type === toastType.DANGER) toast.danger(text, wrongOptions);
     }
   }
 
@@ -192,7 +175,7 @@ class App extends React.Component {
       const item = classes[predictionClasses[i] - 1];
       const predictionString = score.toFixed(1)+" - "+item.item;
 
-      if (score > 20) {        
+      if (score > 5) {        
         if (item.hasOwnProperty('helmet')) {helmet.push(item.helmet)};
         if (item.hasOwnProperty('vest')) {vest.push(item.vest)};
 
@@ -201,19 +184,7 @@ class App extends React.Component {
       }
     }
     
-    // Need to check for falsy first (no helmet > has helmet)
-    let helmetExistence = null;
-    if (helmet.includes(false)) helmetExistence = false;
-    else if (helmet.includes(true)) helmetExistence = true;
-
-    let vestExistence = null;
-    if (vest.includes(false)) vestExistence = false;
-    else if (vest.includes(true)) vestExistence = true;
-
-    if (helmetExistence === false && vestExistence === false) this.toast(toastType.DANGER, "DANGER!", "There's no vest and helmet on this person!"); 
-    else if (helmetExistence === false) this.toast(toastType.WARNING, "NO HELMET!", "Please wear your helmet!"); 
-    else if (vestExistence === false) this.toast(toastType.WARNING, "NO VEST!", "Please wear your vest!"); 
-    else if (helmetExistence === true && vestExistence === true) this.toast(toastType.SUCCESS, "ACCESS GRANTED!", "Welcome in!");
+    if (helmetExistence === true && vestExistence === true) this.toast(toastType.SUCCESS, "ACCESS GRANTED!", "Welcome in!");
   };
 
   drawBox(minX, minY, maxX, maxY, color, text){
@@ -240,13 +211,6 @@ class App extends React.Component {
   render() {
     return (
       <div> 
-        {/* AUDIO */}
-        <audio loop ref={r => this.audioWrong = r}>
-          <source
-            src="https://freesound.org/data/previews/476/476177_6101353-lq.mp3"
-            type="audio/mpeg"
-          />
-        </audio>
         <audio loop ref={r => this.audioRight = r}>
           <source
             src="https://freesound.org/data/previews/131/131660_2398403-lq.mp3"
