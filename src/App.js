@@ -193,7 +193,7 @@ class App extends React.Component {
       if (helmet.includes(true)){
         this.helmetExistence = true;
         // Upon detecting a helmet, make it remember theres a helmet for 3 seconds
-        setTimeout(() => {this.helmetExistence = false}, 3000);
+        setTimeout(() => {this.helmetExistence = false}, 4000);
       }
     }
 
@@ -207,7 +207,7 @@ class App extends React.Component {
     if (!this.vestExistence){
       if (vest.includes(true)){
         this.vestExistence = true;
-        setTimeout(() => {this.vestExistence = false}, 3000);
+        setTimeout(() => {this.vestExistence = false}, 4000);
       }
     }
 
@@ -217,6 +217,8 @@ class App extends React.Component {
       }
       this.hasDetected = true;
       setTimeout(() => {this.hasDetected = false}, 5000);
+      this.vestExistence = false;
+      this.helmetExistence = false;
 
     }
   };
