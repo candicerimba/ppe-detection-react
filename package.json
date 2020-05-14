@@ -9,18 +9,18 @@
     "@material-ui/icons": "^4.9.1",
     "@tensorflow/tfjs": "1.7.2",
     "@tensorflow/tfjs-core": "1.7.2",
+    "aos": "^2.3.4",
     "aws-sdk": "^2.646.0",
+    "bootstrap": "^4.5.0",
     "react": "16.8.0",
+    "react-bootstrap": "^1.0.1",
     "react-dom": "16.8.0",
     "react-loader": "^2.4.7",
-    "react-magic-dropzone": "1.0.1",
-    "react-rainbow-components": "^1.14.1",
     "react-router-dom": "^5.2.0",
     "react-scripts": "2.0.3",
     "react-toastify": "^6.0.0-rc.2-1",
     "react-tooltip": "^4.2.5",
-    "react-transition-group": "^4.3.0",
-    "reactstrap": "^8.4.1"
+    "sweetalert2-react": "^0.8.3"
   },
   "devDependencies": {},
   "scripts": {

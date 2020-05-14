@@ -3,8 +3,10 @@ import React from "react";
 import Loader from 'react-loader';
 import ReactTooltip from 'react-tooltip';
 import PauseOutlinedIcon from '@material-ui/icons/PauseOutlined';
+import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 import { ToastContainer, toast } from 'react-toastify';  
+import SweetAlert from 'sweetalert2-react';
 
 import logo from '../../image/ppe.png';
 import 'react-toastify/dist/ReactToastify.css';
@@ -38,6 +40,7 @@ class Detection extends React.Component {
       helmetExistence: false,
       vestExistence: false,
       hasDetected: false,
+      help: false,
     }
     this.stopModel = this.stopModel.bind(this);
     this.startModel = this.startModel.bind(this);
@@ -270,20 +273,33 @@ class Detection extends React.Component {
             height={this.state.height}
           />
         </div>
-        <Loader loaded={this.state.webcamStart && this.state.model} options={{color: this.state.model ? 'white' : 'black'}}>
-          <div id="main-button-bar">
-              
+        <div id="main-button-bar">
+          <Loader loaded={this.state.webcamStart && this.state.model} options={{color: this.state.model ? 'white' : 'black'}}>
+            <div className="main-btn-container">
               <PauseOutlinedIcon id="stop-btn" className="main-btn" onClick={this.stopModel} data-tip data-for="stop" />
               <PlayArrowIcon style={{display: 'none'}} id="start-btn" className="main-btn" onClick={this.startModel} data-tip data-for="start" />
-              
-              <ReactTooltip id="start" place="top" type="light" effect="float">
-                <span>Click on this button to start detection.</span>  
-              </ReactTooltip>
-              <ReactTooltip id="stop" place="top" type="light" effect="float">
-                <span>Click on this button to stop detection.</span>  
-              </ReactTooltip>
             </div>
-        </Loader>
+            <ReactTooltip id="start" place="top" type="light" effect="float">
+              <span>Click on this button to start detection.</span>  
+            </ReactTooltip>
+            <ReactTooltip id="stop" place="top" type="light" effect="float">
+              <span>Click on this button to stop detection.</span>  
+            </ReactTooltip>
+          </Loader>
+          <div className="main-btn-container"><HelpOutlineIcon className="main-btn" data-tip data-for="help" onClick={()=>{this.setState({help: true})}} /></div>
+          
+          <ReactTooltip id="help" place="top" type="light" effect="float">
+              <span>Click on this button if you need any help.</span>  
+            </ReactTooltip>
+
+          <SweetAlert
+            show={this.state.help}
+            title="Support"
+            confirmButtonColor="#BECF41"
+            html="<b>If the system is not running properly,<br />make sure to give the application access to your camera, and allow up to a minute to let the application load.<br/><br/>To test the application, have someone wearing a hard-hat and a vest appear on your camera and watch the model work!<br/><br/>The Pause/Play button can be used to stop/start detection.</b>"
+            onConfirm={() => this.setState({ help: false })}
+          />
+        </div>
       </div>
     );
   }
