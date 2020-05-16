@@ -9,16 +9,17 @@ export class App extends Component {
     document.title = "Show Me Your PPE";
   }
 
-    render() {
-        return (
-          <Router>
-            <Switch>
-                <Route path="/" exact component={HomePage} />
-                <Route path="/detection" exact component={Detection} />
-            </Switch>
-          </Router>
-        );
-    }
+  render() {
+    // React-router helps to create links for each page. 
+    return (
+      <Router>
+        <Switch>
+            <Route path="/" exact component={HomePage} />
+            <Route path="/detection" exact component={Detection} />
+        </Switch>
+      </Router>
+    );
+  }
 }
 
 export default App;

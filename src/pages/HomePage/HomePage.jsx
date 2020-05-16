@@ -1,3 +1,4 @@
+// Design inspired from Appland Bootstrap: https://bootstrapmade.com/demo/Appland/
 import React from "react";
 import {Accordion, Card} from 'react-bootstrap';
 import AOS from 'aos';
@@ -16,6 +17,7 @@ class HomePage extends React.Component {
   constructor(props){
     super(props);
     this.state = {
+      // Used to display FAQs
       cards: [{
         question: 'How do we use the project?',
         answer: <div>To start the project, you can either click on the "Start Detection" button at the top of the page, or the play button on the bottom right section of the screen. <br /><br />Once you're in the program, please make sure to allow camera access to the browser. Test it out by wearing a hard-hat and a high-vis vest and let it start!</div>
@@ -36,6 +38,7 @@ class HomePage extends React.Component {
   }
 
   componentDidMount() {
+    // When component loaded, initialise AOS (Animate on Scroll)
     AOS.init({
       duration: 800,
       easing: "ease-in-out",

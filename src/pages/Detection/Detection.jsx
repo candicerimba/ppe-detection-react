@@ -14,6 +14,10 @@ import "./Detection.css";
 
 const tf = require("@tensorflow/tfjs");
 
+// Detection classes of the model
+// item: Name of the item
+// color: the color that should be used to draw it
+// helmet/vest: true if it is a helmet/vest, false if it is not a helmet/vest 
 const classes = [
   {item: "helmet", color: "#F8962B", helmet: true}, 
   {item:"no helmet", color:"#FE0000", helmet: false}, 
@@ -21,7 +25,6 @@ const classes = [
   {item: "no vest", color: "#51C1B1", vest: false}];
 
 const MAX_HEIGHT = 0.80 * window.innerHeight;
-var toastOpen = false;
 
 toast.configure();
 
@@ -47,6 +50,7 @@ class Detection extends React.Component {
   }
 
   componentDidMount() {
+    // Obtains the user's camera stream.
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       const webCamPromise = navigator.mediaDevices
         .getUserMedia({
@@ -57,6 +61,7 @@ class Detection extends React.Component {
         })
         .then(stream => {
           window.stream = stream;
+          // Find ratio to ensure height of camera stream displayed cannot go over MAX_HEIGHT (80% of the full screen height)
           const ratio = MAX_HEIGHT / stream.getTracks()[0].getSettings().height;
           this.setState({
             width: stream.getTracks()[0].getSettings().width * ratio,
@@ -70,16 +75,20 @@ class Detection extends React.Component {
           });
         });
       
+      // Load the model file from the host
       const modelPromise = tf.loadGraphModel('https://cors-anywhere.herokuapp.com/https://tensorflowfyp.s3-ap-southeast-2.amazonaws.com/model.json',
       {
         credentials: 'include',
         mode: 'no-cors', // no-cors, *cors, same-origin
       }).then((model)=>{
         this.setState({
+          // Save the loaded model into state
           model: model,
           run: true,
         })
       });
+
+      // Obtain the loaded model and the camera stream, if done, can start detecting objects
       Promise.all([modelPromise, webCamPromise])
         .then(values => {
           this.detectObjects();
@@ -90,12 +99,14 @@ class Detection extends React.Component {
    }
   }
 
+  // Run when pause button is clicked
   stopModel(){
     this.setState({run: false});
     document.getElementById("stop-btn").style.display = 'none';
     document.getElementById("start-btn").style.display = 'inline-block';
   }
 
+  // Run when play button is clicked
   startModel(){
     this.setState({run: true});
     document.getElementById("stop-btn").style.display = 'inline-block';
@@ -103,8 +114,11 @@ class Detection extends React.Component {
   }
 
   async detectObjects () {
-    if (this.state.model === null) return;
-    if (this.state.run) {
+    if (this.state.model === null) return;  // If model isn't even loaded yet, don't try to detect any object
+    
+    // Only go through with detection when the model is running
+    if (this.state.run) {                   
+      // Obtain all the predictions, and call a function to draw them
       const tfImg = tf.browser.fromPixels(this.videoRef.current);
       const smallImg = tf.image.resizeBilinear(tfImg, [300, 300]); // 600, 450
       const resized = tf.cast(smallImg, 'float32');
@@ -118,20 +132,13 @@ class Detection extends React.Component {
       tf4d.dispose();
     }
 
+    // Keep calling itself to continue object detection 
     requestAnimationFrame(() => {
       this.detectObjects()
     })
   }
 
-  detectFrame = (video, model) => {
-    model.predict(video).then(predictions => {
-      this.renderPredictions(predictions);
-      requestAnimationFrame(() => {
-        this.detectFrame(video, model);
-      });
-    });
-  };
-
+  // Creates alert with title and description as arguments
   toast(title, description){
     const text = ({closeToast}) => {return (
       <div style={{paddingLeft: '10%'}}>
@@ -145,33 +152,44 @@ class Detection extends React.Component {
       closeButton: false,
       pauseOnFocusLoss: false,
       pauseOnHover: false,
+
+      // When the notification appears, keep playing the audio
+      // Notification is set to autoclose in 5 seconds.
+      // After 5 seconds have passed and notification is closed, stop playing audio.
       onOpen: () => {
         this.audioRight.play();
         setTimeout(()=>{
         this.audioRight.pause();
-          toastOpen = false;
+          this.setState({
+            hasDetected: false,
+            vestExistence: false,
+            helmetExistence: false,
+          });
         }, 5000);
       }
     };
 
-    if (!toastOpen){
-      toastOpen = true;
+    // We only want one notification max on the screen
+    // Only create notification if there's no other notification open
+    if (!this.state.hasDetected){
+      this.setState({hasDetected: true});
       toast.success(text, rightOptions);
     }
   }
 
+  // Draws predictions 
   renderPredictions (predictionBoxes, totalPredictions, predictionClasses, predictionScores){
-     // get the context of canvas
-     const ctx = this.canvasRef.current.getContext('2d')
-     // clear the canvas
-     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-     // draw results
-    if (!this.state.webcamStart) this.setState({webcamStart: true});
+     const ctx = this.canvasRef.current.getContext('2d')                // get the context of canvas
+     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)           // clear the canvas
+    if (!this.state.webcamStart) this.setState({webcamStart: true});    // draw results
 
-    const vest = [];
-    const helmet = [];
-
+    // If the model isn't running, don't bother drawing.
     if(this.state.run === false) return;
+
+    let vest = false;
+    let helmet = false;
+
+    // Go through all the predictions, look for a vest/helmet in the frame.
     for (let i = 0; i < totalPredictions[0]; i++) {
       const minY = predictionBoxes[i * 4] * this.state.height;
       const minX = predictionBoxes[i * 4 + 1] * this.state.width;
@@ -182,44 +200,34 @@ class Detection extends React.Component {
       const predictionString = score.toFixed(1)+" - "+item.item;
 
       if (score > 5) {        
-        if (item.hasOwnProperty('helmet')) {helmet.push(item.helmet)};
-        if (item.hasOwnProperty('vest')) {vest.push(item.vest)};
+        if (item.hasOwnProperty('helmet') && item.helmet) {helmet = true};
+        if (item.hasOwnProperty('vest') && item.vest) {vest = true};
 
         const color = item.color;
         this.drawBox(minX, minY, maxX, maxY, color, predictionString);
       }
     }
-     // If helmet and vest existence are both false, try to detect
-     if (!this.helmetExistence){
-      if (helmet.includes(true)){
-        this.helmetExistence = true;
-        // Upon detecting a helmet, make it remember theres a helmet for 3 seconds
-        setTimeout(() => {this.helmetExistence = false}, 4000);
-      }
+    
+    // If there's a helmet in the current frame
+    if (helmet){
+      this.helmetExistence = true;
+      // Upon detecting a helmet, make it remember theres a helmet for 4 seconds
+      setTimeout(() => {this.helmetExistence = false}, 4000);
     }
 
-    // If there isnt a vest
-    if (!this.vestExistence){
-      if (vest.includes(true)){
-        this.vestExistence = true;
-        setTimeout(() => {this.vestExistence = false}, 4000);
-      }
+    // If there is a vest in the current frame
+    if (vest){
+      this.vestExistence = true;
+      setTimeout(() => {this.vestExistence = false}, 4000);
     }
 
-    if (!this.hasDetected){
-      if (this.helmetExistence === true && this.vestExistence === true){
-        this.toast("ACCESS GRANTED!", "Welcome in!");
-      }
-      this.hasDetected = true;
-      setTimeout(() => {this.hasDetected = false}, 5000);
-      this.vestExistence = false;
-      this.helmetExistence = false;
-
+    if (this.helmetExistence === true && this.vestExistence === true){
+      this.toast("ACCESS GRANTED!", "Welcome in!");
     }
   };
 
+  // Draws a detection box by obtaining its coordinate, its color, and its corresponding text
   drawBox(minX, minY, maxX, maxY, color, text){
-    
     const ctx = this.canvasRef.current.getContext('2d')
     ctx.beginPath()
     ctx.rect(minX, minY, maxX - minX, maxY - minY)
@@ -274,11 +282,13 @@ class Detection extends React.Component {
           />
         </div>
         <div id="main-button-bar">
+          {/* Display a loading wheel if model not ready to detect item */}
           <Loader loaded={this.state.webcamStart && this.state.model} options={{color: this.state.model ? 'white' : 'black'}}>
             <div className="main-btn-container">
               <PauseOutlinedIcon id="stop-btn" className="main-btn" onClick={this.stopModel} data-tip data-for="stop" />
               <PlayArrowIcon style={{display: 'none'}} id="start-btn" className="main-btn" onClick={this.startModel} data-tip data-for="start" />
             </div>
+            {/* ReactTooltip creates a small tooltip to buttons when hovered. */}
             <ReactTooltip id="start" place="top" type="light" effect="float">
               <span>Click on this button to start detection.</span>  
             </ReactTooltip>
@@ -292,6 +302,7 @@ class Detection extends React.Component {
               <span>Click on this button if you need any help.</span>  
             </ReactTooltip>
 
+          {/* Alert to be displayed when help button is clicked */}
           <SweetAlert
             show={this.state.help}
             title="Support"
