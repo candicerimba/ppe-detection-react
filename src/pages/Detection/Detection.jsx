@@ -102,15 +102,19 @@ class Detection extends React.Component {
   // Run when pause button is clicked
   stopModel(){
     this.setState({run: false});
-    document.getElementById("stop-btn").style.display = 'none';
-    document.getElementById("start-btn").style.display = 'inline-block';
+    const stop = document.getElementById("stop-btn");
+    const start =  document.getElementById("start-btn");
+    if (stop) stop.style.display = 'none';
+    if (start) start.style.display = 'inline-block';
   }
 
   // Run when play button is clicked
   startModel(){
     this.setState({run: true});
-    document.getElementById("stop-btn").style.display = 'inline-block';
-    document.getElementById("start-btn").style.display = 'none';
+    const stop = document.getElementById("stop-btn");
+    const start =  document.getElementById("start-btn");
+    if (stop) stop.style.display = 'inline-block';
+    if (start) start.style.display = 'none';
   }
 
   async detectObjects () {
@@ -296,7 +300,7 @@ class Detection extends React.Component {
               <span>Click on this button to stop detection.</span>  
             </ReactTooltip>
           </Loader>
-          <div className="main-btn-container"><HelpOutlineIcon className="main-btn" data-tip data-for="help" onClick={()=>{this.setState({help: true})}} /></div>
+          <div className="main-btn-container"><HelpOutlineIcon id="help-btn" className="main-btn" data-tip data-for="help" onClick={()=>{this.setState({help: true})}} /></div>
           
           <ReactTooltip id="help" place="top" type="light" effect="float">
               <span>Click on this button if you need any help.</span>  
@@ -304,6 +308,7 @@ class Detection extends React.Component {
 
           {/* Alert to be displayed when help button is clicked */}
           <SweetAlert
+            id = "alert-container"
             show={this.state.help}
             title="Support"
             confirmButtonColor="#BECF41"

@@ -84,7 +84,7 @@ class HomePage extends React.Component {
                 <div className="frequently-asked-description" data-aos="fade-up">You can know more about our project through this list of FAQs.</div>           
                 <Accordion defaultActiveKey="0">
                   {this.state.cards.map((card, index)=>{return(
-                  <Card className="frequently-asked-container" data-aos="fade-up" data-aos-delay={(index + 1) * 100}>
+                  <Card key={index} className="frequently-asked-container" data-aos="fade-up" data-aos-delay={(index + 1) * 100}>
                     <Accordion.Toggle as={Card} variant="link" eventKey={index} className="frequently-asked-header">
                     <div className="q-icon-container left"><HelpOutlineIcon className="q-icon"/></div>
                     <div className="question-text left">{card.question}</div>
