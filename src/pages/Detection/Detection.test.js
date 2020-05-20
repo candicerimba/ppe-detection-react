@@ -34,4 +34,22 @@ describe('HomePage component', () => {
         expect(wrapper.state('help')).toBe(true);
         expect(wrapper.find('#alert-container').get(0).props.show).toBe(true);
     });
+
+    it('should show a notification when there\'s a hardhat and a vest', ()=>{
+        wrapper.setState({helmetExistence: true, vestExistence: true, hasDetected: false});
+        wrapper.instance().toast();
+        expect(wrapper.state('hasDetected')).toBe(true);
+    });
+
+    it('should not show a notification when the correct PPE is not worn', ()=>{
+        wrapper.setState({hasDetected: false});
+        const example = [[false, false], [true, false],[false, true]];
+        example.forEach((a)=>{
+            //console.log(a, b)
+            wrapper.setState({helmetExistence: a[0], vestExistence: a[1]});
+            wrapper.instance().toast();
+            expect(wrapper.state('hasDetected')).toBe(false);
+        })
+    });
+    
 });

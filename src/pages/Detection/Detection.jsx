@@ -175,7 +175,7 @@ class Detection extends React.Component {
 
     // We only want one notification max on the screen
     // Only create notification if there's no other notification open
-    if (!this.state.hasDetected){
+    if ((this.state.helmetExistence === true && this.state.vestExistence === true) && !this.state.hasDetected){
       this.setState({hasDetected: true});
       toast.success(text, rightOptions);
     }
@@ -203,7 +203,8 @@ class Detection extends React.Component {
       const item = classes[predictionClasses[i] - 1];
       const predictionString = score.toFixed(1)+" - "+item.item;
 
-      if (score > 5) {        
+      // Only accept this prediction if its above our score treshold
+      if (score > 30) {        
         if (item.hasOwnProperty('helmet') && item.helmet) {helmet = true};
         if (item.hasOwnProperty('vest') && item.vest) {vest = true};
 
@@ -214,18 +215,18 @@ class Detection extends React.Component {
     
     // If there's a helmet in the current frame
     if (helmet){
-      this.helmetExistence = true;
+      this.setState({helmetExistence: true});
       // Upon detecting a helmet, make it remember theres a helmet for 4 seconds
-      setTimeout(() => {this.helmetExistence = false}, 4000);
+      setTimeout(() => this.setState({helmetExistence: false}), 4000);
     }
 
     // If there is a vest in the current frame
     if (vest){
-      this.vestExistence = true;
-      setTimeout(() => {this.vestExistence = false}, 4000);
+      this.setState({vestExistence: true});
+      setTimeout(() => this.setState({vestExistence: false}), 4000);
     }
 
-    if (this.helmetExistence === true && this.vestExistence === true){
+    if (this.state.helmetExistence === true && this.state.vestExistence === true){
       this.toast("ACCESS GRANTED!", "Welcome in!");
     }
   };
@@ -286,8 +287,8 @@ class Detection extends React.Component {
           />
         </div>
         <div id="main-button-bar">
-          {/* Display a loading wheel if model not ready to detect item */}
-          <Loader loaded={this.state.webcamStart && this.state.model} options={{color: this.state.model ? 'white' : 'black'}}>
+          {/* Display a loading wheel if model not ready to detect item*/ }
+          <Loader className="loader" loaded={this.state.webcamStart && this.state.model} options={{color: this.state.model ? 'white' : 'black'}}>
             <div className="main-btn-container">
               <PauseOutlinedIcon id="stop-btn" className="main-btn" onClick={this.stopModel} data-tip data-for="stop" />
               <PlayArrowIcon style={{display: 'none'}} id="start-btn" className="main-btn" onClick={this.startModel} data-tip data-for="start" />

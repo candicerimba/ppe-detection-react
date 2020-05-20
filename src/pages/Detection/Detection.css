@@ -15,6 +15,12 @@ a {
     float: left;
     width: 22px;
   }
+
+  .loader {
+    position: fixed;
+    left: 50%;
+    bottom: 50%;
+  }
   
   .title {
     font-family: 'Roboto';
@@ -55,9 +61,9 @@ a {
   }
 
   #main-button-bar {
-      position: absolute;
+      position: fixed;
       margin: auto;
-      left: 47%;
+      left: 48%;
       bottom: 3%;
       text-align: center;
       position: absolute;
@@ -67,7 +73,7 @@ a {
   }
 
   .main-btn-container {
-    margin: 0% 100%;
+    margin: 0% 40%;
   }
 
   .main-btn{
