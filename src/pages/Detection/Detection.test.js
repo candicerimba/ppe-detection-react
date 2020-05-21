@@ -45,7 +45,6 @@ describe('HomePage component', () => {
         wrapper.setState({hasDetected: false});
         const example = [[false, false], [true, false],[false, true]];
         example.forEach((a)=>{
-            //console.log(a, b)
             wrapper.setState({helmetExistence: a[0], vestExistence: a[1]});
             wrapper.instance().toast();
             expect(wrapper.state('hasDetected')).toBe(false);
