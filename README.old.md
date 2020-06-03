@@ -1,1 +1,0 @@
-# ppe-detection-react
