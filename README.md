@@ -1,5 +1,5 @@
 # Show Me Your PPE
-[Link](bit.ly/showmeyourppe)
+[Link](https://show-me-your-ppe.web.app/)
 
 This is a web application designed to tackle work safety issues in the construction industry. 
 
